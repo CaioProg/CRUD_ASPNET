@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Data.SqlClient;
 
 namespace MyStore.Pages.Clients
 {
@@ -7,6 +8,7 @@ namespace MyStore.Pages.Clients
     {
         public ClientInfo clientInfo = new ClientInfo();
         public String errorMessage = "";
+        public String successMessage = "";
         public void OnGet()
         {
         }
@@ -23,6 +25,42 @@ namespace MyStore.Pages.Clients
                 errorMessage = "All the fields are required";
                 return;
             }
+
+            //salva um novo cliente no banco de dados
+            try
+            {
+                String connectionString = "Data Source=.\\sqlexpress;Initial Catalog=mystore;Integrated Security=True";
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    String sql = "INSERT INTO clients " +
+                                 "(name, email, phone, address) VALUES " +
+                                 "(@name, @email, @phone, @address);";
+
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@name", clientInfo.name);
+                        command.Parameters.AddWithValue("@email", clientInfo.email);
+                        command.Parameters.AddWithValue("@phone", clientInfo.phone);
+                        command.Parameters.AddWithValue("@address", clientInfo.address);
+
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+                errorMessage = ex.Message;
+                return;
+            }
+
+            clientInfo.name = ""; clientInfo.email = ""; clientInfo.phone = ""; clientInfo.address = "";
+            successMessage = "New Client Added Correctly";
+
+            Response.Redirect("/Clients/Index");
+
         }
     }
 }
